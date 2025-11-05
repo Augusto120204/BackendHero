@@ -33,7 +33,7 @@ export class RutinaService {
     }
     const rutinaBuffer = Buffer.from(base64Content, 'base64');
 
-    return this.prisma.rutina.create({
+    const response = await this.prisma.rutina.create({
       data: {
         clienteId: dto.clienteId,
         rutina: rutinaBuffer,
@@ -54,6 +54,15 @@ export class RutinaService {
         },
       },
     });
+
+    await this.prisma.entrenamiento.create({
+      data: {
+        rutinaId: response.id,
+        finalizado: false,
+      },
+    });
+
+    return response;
   }
 
   async findAll() {
@@ -139,6 +148,7 @@ export class RutinaService {
         fechaInicio: true,
         fechaFin: true,
         observacion: true,
+        entrenamiento: true,
       },
       orderBy: {
         fechaInicio: 'desc',
