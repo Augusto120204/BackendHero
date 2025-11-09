@@ -80,6 +80,7 @@ export class UsuariosService {
         }
         await this.prisma.cliente.create({
           data: {
+            id: usuario.id, // El ID del cliente será el mismo que el del usuario
             usuarioId: usuario.id,
             horario: dto.horario,
             sexo: dto.sexo,

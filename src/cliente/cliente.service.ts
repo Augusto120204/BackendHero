@@ -9,9 +9,18 @@ export class ClienteService {
   constructor(private prisma: PrismaService) {}
 
   create(dto: CreateClienteDto) {
-    return this.prisma.cliente.create({ data: dto });
+    return this.prisma.cliente.create({
+      data: {
+        id: dto.usuarioId, // El ID del cliente será el mismo que el del usuario
+        usuarioId: dto.usuarioId,
+        horario: dto.horario,
+        sexo: dto.sexo,
+        observaciones: dto.observaciones,
+        objetivos: dto.objetivos,
+        tiempoEntrenar: dto.tiempoEntrenar,
+      },
+    });
   }
-
   findAll() {
     return this.prisma.cliente.findMany({
       include: {

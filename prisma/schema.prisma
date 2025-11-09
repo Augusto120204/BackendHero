@@ -53,8 +53,8 @@ model Recepcionista {
 }
 
 model Cliente {
-  id               Int               @id @default(autoincrement())
-  usuarioId        Int
+  id               Int               @id
+  usuarioId        Int               @unique
   horario          String
   sexo             String
   observaciones    String
