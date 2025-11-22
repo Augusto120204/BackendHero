@@ -21,7 +21,16 @@ export class ClientePlanService {
       }
 
     findAll(){
-        return this.prisma.clientePlan.findMany();
+        return this.prisma.clientePlan.findMany({
+          include: {
+            cliente: {
+              include: {
+                usuario: { select: { nombres: true, apellidos: true } },
+              },
+            },
+            plan: { select: { nombre: true } },
+          },
+        });
     }
 
     async findOne(id: number) {

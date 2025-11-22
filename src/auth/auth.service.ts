@@ -11,27 +11,43 @@ export class AuthService {
   ) {}
 
   async login(cedula: string, password: string) {
-    const user = await this.prisma.usuario.findUnique({
+    const usuario = await this.prisma.usuario.findUnique({
       where: { cedula }, // ✅ usamos campo único
     });
 
-    if (!user) {
+    if (!usuario) {
       throw new UnauthorizedException('Cédula no encontrada');
     }
 
-    const valid = await bcrypt.compare(password, user.password);
+    const valid = await bcrypt.compare(password, usuario.password);
     if (!valid) {
       throw new UnauthorizedException('Contraseña incorrecta');
     }
 
-    const payload = {
-      sub: user.id,
-      userName: user.userName,
-      cedula: user.cedula,
-    };
+    let rol = 'SIN_ROL';
+    const admin = await this.prisma.administrador.findFirst({
+      where: { usuarioId: usuario.id },
+    });
+    const recep = await this.prisma.recepcionista.findFirst({
+      where: { usuarioId: usuario.id },
+    });
+    const entrenador = await this.prisma.entrenador.findFirst({
+      where: { usuarioId: usuario.id },
+    });
+
+    if (admin) rol = 'ADMIN';
+    else if (recep) rol = 'RECEPCIONISTA';
+    else if (entrenador) rol = 'ENTRENADOR';
+
+    // const payload = { sub: usuario.id, userName: usuario.userName, cedula: usuario.cedula, role: rol };
 
     return {
-      access_token: this.jwtService.sign(payload),
+      access_token: this.jwtService.sign({
+        sub: usuario.id,
+        userName: usuario.userName,
+        cedula: usuario.cedula,
+        rol,
+      }),
     };
   }
 }

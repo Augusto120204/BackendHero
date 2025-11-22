@@ -21,12 +21,85 @@ export class ClienteService {
       },
     });
   }
-  findAll() {
-    return this.prisma.cliente.findMany({
-      include: {
-        usuario: true,
+
+  async findAll(page = 1, limit = 10, search?: string) {
+    const take = Math.max(1, Math.min(limit, 50));
+    const currentPage = Math.max(1, page);
+    const skip = (currentPage - 1) * take;
+
+    const trimmedSearch = search?.trim();
+    const where: Prisma.ClienteWhereInput = trimmedSearch
+      ? {
+          OR: [
+            {
+              usuario: {
+                nombres: { contains: trimmedSearch, mode: 'insensitive' },
+              },
+            },
+            {
+              usuario: {
+                apellidos: { contains: trimmedSearch, mode: 'insensitive' },
+              },
+            },
+            {
+              usuario: {
+                cedula: { contains: trimmedSearch, mode: 'insensitive' },
+              },
+            },
+          ],
+        }
+      : {};
+
+    // Ejecutamos count y fetch en paralelo para mejor rendimiento
+    const [totalItems, clientes] = await Promise.all([
+      this.prisma.cliente.count({ where }),
+      this.prisma.cliente.findMany({
+        where,
+        skip,
+        take,
+        orderBy: { id: 'desc' },
+        select: {
+          id: true,
+          horario: true,
+          sexo: true,
+          objetivos: true,
+          tiempoEntrenar: true,
+          usuario: {
+            select: {
+              id: true,
+              nombres: true,
+              apellidos: true,
+              cedula: true,
+            },
+          },
+          planes: {
+            orderBy: { fechaFin: 'desc' },
+            take: 1,
+            select: {
+              id: true,
+              fechaInicio: true,
+              fechaFin: true,
+              plan: {
+                select: {
+                  nombre: true,
+                },
+              },
+            },
+          },
+        },
+      }),
+    ]);
+
+    return {
+      data: clientes,
+      meta: {
+        totalItems,
+        itemCount: clientes.length,
+        perPage: take,
+        totalPages: Math.ceil(totalItems / take),
+        currentPage,
       },
-    });
+    };
   }
 
   async findOne(id: number) {
@@ -44,7 +117,33 @@ export class ClienteService {
 
   async remove(id: number) {
     await this.findOne(id);
-    return this.prisma.cliente.delete({ where: { id } });
+
+    // Borrado en cascada manual de entidades asociadas más comunes
+    await this.prisma.$transaction(async (tx) => {
+      // ClientePlan dependencias: pagos y deudas
+      const cps = await tx.clientePlan.findMany({
+        where: { clienteId: id },
+        select: { id: true },
+      });
+      const cpIds = cps.map((x) => x.id);
+      if (cpIds.length) {
+        await tx.pago.deleteMany({ where: { clientePlanId: { in: cpIds } } });
+        await tx.deuda.deleteMany({ where: { clientePlanId: { in: cpIds } } });
+      }
+      await tx.clientePlan.deleteMany({ where: { clienteId: id } });
+
+      // Otras dependencias directas
+      await tx.compra.deleteMany({ where: { clienteId: id } });
+      await tx.novedad.deleteMany({ where: { clienteId: id } });
+      await tx.clienteMedida.deleteMany({ where: { clienteId: id } });
+
+      // Nota: Si existen rutinas y su árbol asociado, se deberían eliminar en orden.
+      // Por simplicidad y porque aún no se usan en la UI de clientes/pagos, omitimos aquí.
+
+      await tx.cliente.delete({ where: { id } });
+    });
+
+    return { ok: true };
   }
 
   async findRecientes(limit = 10) {

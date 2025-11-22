@@ -10,21 +10,30 @@ import { PagoModule } from './pago/pago.module';
 import { DeudaModule } from './deuda/deuda.module';
 import { GastoModule } from './gasto/gasto.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { EstadisticasModule } from './estadisticas/estadisticas.module';
+import { AdministradorModule } from './administrador/administrador.module';
+import { EntrenadorModule } from './entrenador/entrenador.module';
+import { RecepcionistaModule } from './recepcionista/recepcionista.module';
 import { RutinaModule } from './rutina/rutina.module';
 
 @Module({
-  imports: [UsuariosModule,
-            PrismaModule,
-            AuthModule,
-            ClienteModule,
-            ProductoModule,
-            PlanModule,
-            ClientePlanModule,
-            PagoModule,
-            DeudaModule,
-            GastoModule,
-            NotificationsModule,
-            RutinaModule
-  ]
+  imports: [
+    UsuariosModule,
+    PrismaModule,
+    AuthModule,
+    ClienteModule,
+    ProductoModule,
+    PlanModule,
+    ClientePlanModule,
+    PagoModule,
+    DeudaModule,
+    GastoModule,
+    NotificationsModule,
+    EstadisticasModule,
+    AdministradorModule,
+    EntrenadorModule,
+    RecepcionistaModule,
+    RutinaModule,
+  ],
 })
 export class AppModule {}

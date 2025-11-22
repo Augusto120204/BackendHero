@@ -17,8 +17,22 @@ export class PagoService {
         });
       }
 
-      findAll() {
-        return this.prisma.pago.findMany();
+      async findAll() {
+        return this.prisma.pago.findMany({
+          orderBy: { id: 'asc' },
+          include: {
+            clientePlan: {
+              include: {
+                cliente: {
+                  include: {
+                    usuario: { select: { nombres: true, apellidos: true } },
+                  },
+                },
+                plan: { select: { nombre: true } },
+              },
+            },
+          },
+        });
       }
 
       async findOne(id: number) {

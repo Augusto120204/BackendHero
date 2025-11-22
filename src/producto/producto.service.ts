@@ -11,8 +11,18 @@ export class ProductoService {
         return this.prisma.producto.create({ data: dto});
     }
 
-    findAll(){
-        return this.prisma.producto.findMany();
+    findAll(search?: string){
+        return this.prisma.producto.findMany({
+            where: search
+                ? {
+                    nombre: {
+                        contains: search,
+                        mode: 'insensitive',
+                    },
+                }
+                : undefined,
+            orderBy: { nombre: 'asc' },
+        });
     }
 
     async findOne(id: number){

@@ -80,7 +80,7 @@ export class UsuariosService {
         }
         await this.prisma.cliente.create({
           data: {
-            id: usuario.id, // El ID del cliente será el mismo que el del usuario
+            id: usuario.id,
             usuarioId: usuario.id,
             horario: dto.horario,
             sexo: dto.sexo,
@@ -115,5 +115,79 @@ export class UsuariosService {
 
     const { password, ...result } = usuario;
     return result;
+  }
+
+  async findByRol(rol?: string) {
+    switch ((rol || '').toLowerCase()) {
+      case 'administrador': {
+        const rows = await this.prisma.administrador.findMany({
+          include: { usuario: true },
+        });
+        return rows.map((r) => ({
+          id: r.usuario.id,
+          userName: r.usuario.userName,
+          nombres: r.usuario.nombres,
+          apellidos: r.usuario.apellidos,
+          cedula: r.usuario.cedula,
+          rol: 'administrador',
+        }));
+      }
+      case 'entrenador': {
+        const rows = await this.prisma.entrenador.findMany({
+          include: { usuario: true },
+        });
+        return rows.map((r) => ({
+          id: r.usuario.id,
+          userName: r.usuario.userName,
+          nombres: r.usuario.nombres,
+          apellidos: r.usuario.apellidos,
+          cedula: r.usuario.cedula,
+          rol: 'entrenador',
+        }));
+      }
+      case 'recepcionista': {
+        const rows = await this.prisma.recepcionista.findMany({
+          include: { usuario: true },
+        });
+        return rows.map((r) => ({
+          id: r.usuario.id,
+          userName: r.usuario.userName,
+          nombres: r.usuario.nombres,
+          apellidos: r.usuario.apellidos,
+          cedula: r.usuario.cedula,
+          rol: 'recepcionista',
+        }));
+      }
+      default:
+        // Si no se pasa rol, devolver vacío para evitar respuestas grandes no usadas
+        return [];
+    }
+  }
+
+  async counts() {
+    const [administradores, entrenadores, recepcionistas] = await Promise.all([
+      this.prisma.administrador.count(),
+      this.prisma.entrenador.count(),
+      this.prisma.recepcionista.count(),
+    ]);
+    return { administradores, entrenadores, recepcionistas };
+  }
+
+  async eliminar(usuarioId: number) {
+    // Eliminar rol asociado si existe y luego el usuario
+    await this.prisma.$transaction(async (tx) => {
+      const admin = await tx.administrador.findFirst({ where: { usuarioId } });
+      if (admin) await tx.administrador.delete({ where: { id: admin.id } });
+
+      const ent = await tx.entrenador.findFirst({ where: { usuarioId } });
+      if (ent) await tx.entrenador.delete({ where: { id: ent.id } });
+
+      const rec = await tx.recepcionista.findFirst({ where: { usuarioId } });
+      if (rec) await tx.recepcionista.delete({ where: { id: rec.id } });
+
+      await tx.usuario.delete({ where: { id: usuarioId } });
+    });
+
+    return { ok: true };
   }
 }
