@@ -70,6 +70,7 @@ export class ClienteService {
               nombres: true,
               apellidos: true,
               cedula: true,
+              fechaNacimiento: true,
             },
           },
           planes: {
