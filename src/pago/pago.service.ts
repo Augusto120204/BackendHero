@@ -7,14 +7,79 @@ import { UpdatePagoDto } from './dto/update-pago.dto';
 export class PagoService {
     constructor(private prisma: PrismaService){}
 
-    create(dto: CreatePagoDto) {
-        return this.prisma.pago.create({
+    async create(dto: CreatePagoDto) {
+        // 1. Obtener ClientePlan con el plan asociado para conocer el precio
+        const clientePlan = await this.prisma.clientePlan.findUnique({
+          where: { id: dto.clientePlanId },
+          include: { 
+            plan: true,
+            pago: true, // Obtener todos los pagos previos
+          },
+        });
+    
+        if (!clientePlan) {
+          throw new NotFoundException('ClientePlan no encontrado');
+        }
+    
+        const precioPlan = Number(clientePlan.plan.precio);
+        const montoPagado = Number(dto.monto);
+    
+        // 2. Calcular el total pagado hasta ahora (incluyendo este pago)
+        const totalPagadoAntes = clientePlan.pago.reduce((sum, pago) => sum + Number(pago.monto), 0);
+        const totalPagadoDespues = totalPagadoAntes + montoPagado;
+    
+        console.log(`[Pago] Precio del plan: $${precioPlan}`);
+        console.log(`[Pago] Total pagado antes: $${totalPagadoAntes}`);
+        console.log(`[Pago] Monto de este pago: $${montoPagado}`);
+        console.log(`[Pago] Total pagado después: $${totalPagadoDespues}`);
+    
+        // 3. Crear el pago
+        const pago = await this.prisma.pago.create({
           data: {
-            monto: dto.monto,
+            monto: montoPagado,
             fecha: new Date(dto.fecha),
             clientePlan: { connect: { id: dto.clientePlanId } },
           },
         });
+    
+        // 4. Eliminar todas las deudas anteriores no solventadas de este plan
+        console.log(`[Pago] Buscando deudas para clientePlanId: ${dto.clientePlanId}`);
+        
+        const deudasAEliminar = await this.prisma.deuda.findMany({
+          where: {
+            clientePlanId: dto.clientePlanId,
+            solventada: false,
+          },
+        });
+        
+        console.log(`[Pago] Deudas encontradas para eliminar:`, deudasAEliminar.map(d => ({ id: d.id, monto: d.monto })));
+        
+        const deleteResult = await this.prisma.deuda.deleteMany({
+          where: {
+            clientePlanId: dto.clientePlanId,
+            solventada: false,
+          },
+        });
+        console.log(`[Pago] Deudas eliminadas: ${deleteResult.count}`);
+    
+        // 5. Si el total pagado es menor al precio del plan, crear nueva deuda con el saldo restante
+        if (totalPagadoDespues < precioPlan) {
+          const montoDeuda = precioPlan - totalPagadoDespues;
+          
+          console.log(`[Pago] Creando nueva deuda: $${montoDeuda}`);
+          
+          await this.prisma.deuda.create({
+            data: {
+              clientePlanId: dto.clientePlanId,
+              monto: montoDeuda,
+              solventada: false,
+            },
+          });
+        } else {
+          console.log(`[Pago] Plan completamente pagado. Total: $${totalPagadoDespues}`);
+        }
+    
+        return pago;
       }
 
       async findAll() {

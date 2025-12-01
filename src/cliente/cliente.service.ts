@@ -84,11 +84,27 @@ export class ClienteService {
                   nombre: true,
                 },
               },
+              deudas: {
+                where: { solventada: false },
+                select: {
+                  id: true,
+                  monto: true,
+                },
+              },
             },
           },
         },
       }),
     ]);
+
+    // Debug: ver qué deudas se están devolviendo
+    clientes.forEach(c => {
+      if (c.planes?.[0]?.deudas?.length > 0) {
+        console.log(`[ClienteService] Cliente ${c.usuario?.nombres} tiene deudas:`, 
+          c.planes[0].deudas.map(d => ({ id: d.id, monto: d.monto }))
+        );
+      }
+    });
 
     return {
       data: clientes,
@@ -105,8 +121,76 @@ export class ClienteService {
   async findOne(id: number) {
     const cliente = await this.prisma.cliente.findUnique({
       where: { id },
+      include: {
+        usuario: {
+          select: {
+            id: true,
+            nombres: true,
+            apellidos: true,
+            cedula: true,
+          },
+        },
+        planes: {
+          orderBy: { fechaFin: 'desc' },
+          take: 1,
+          include: {
+            plan: {
+              select: {
+                nombre: true,
+                precio: true,
+              },
+            },
+            deudas: {
+              where: { solventada: false },
+              select: {
+                id: true,
+                monto: true,
+                solventada: true,
+              },
+            },
+          },
+        },
+      },
     });
     if (!cliente) throw new NotFoundException('Cliente no encontrado');
+    return cliente;
+  }
+
+  async findByUsuarioId(usuarioId: number) {
+    const cliente = await this.prisma.cliente.findFirst({
+      where: { usuarioId },
+      include: {
+        usuario: {
+          select: {
+            id: true,
+            nombres: true,
+            apellidos: true,
+            cedula: true,
+          },
+        },
+        planes: {
+          orderBy: { fechaFin: 'desc' },
+          take: 1,
+          include: {
+            plan: {
+              select: {
+                nombre: true,
+                precio: true,
+              },
+            },
+            deudas: {
+              where: { solventada: false },
+              select: {
+                id: true,
+                monto: true,
+                solventada: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    if (!cliente) throw new NotFoundException('Cliente no encontrado para este usuario');
     return cliente;
   }
 
@@ -116,9 +200,12 @@ export class ClienteService {
   }
 
   async remove(id: number) {
-    await this.findOne(id);
+    const cliente = await this.prisma.cliente.findUnique({
+      where: { id },
+      select: { usuarioId: true },
+    });
+    if (!cliente) throw new NotFoundException('Cliente no encontrado');
 
-    // Borrado en cascada manual de entidades asociadas más comunes
     await this.prisma.$transaction(async (tx) => {
       // ClientePlan dependencias: pagos y deudas
       const cps = await tx.clientePlan.findMany({
@@ -137,10 +224,46 @@ export class ClienteService {
       await tx.novedad.deleteMany({ where: { clienteId: id } });
       await tx.clienteMedida.deleteMany({ where: { clienteId: id } });
 
-      // Nota: Si existen rutinas y su árbol asociado, se deberían eliminar en orden.
-      // Por simplicidad y porque aún no se usan en la UI de clientes/pagos, omitimos aquí.
+      // Rutinas y árbol asociado (entrenamiento -> semanas -> semanaEjercicio -> series)
+      const rutinas = await tx.rutina.findMany({
+        where: { clienteId: id },
+        select: { id: true },
+      });
+      for (const rutina of rutinas) {
+        const entrenamiento = await tx.entrenamiento.findUnique({
+          where: { rutinaId: rutina.id },
+        });
+        if (entrenamiento) {
+          const semanas = await tx.semana.findMany({
+            where: { entrenamientoId: entrenamiento.id },
+            select: { id: true },
+          });
+          for (const semana of semanas) {
+            const semanaEjercicios = await tx.semanaEjercicio.findMany({
+              where: { semanaId: semana.id },
+              select: { id: true },
+            });
+            for (const se of semanaEjercicios) {
+              await tx.serieRep.deleteMany({
+                where: { semanaEjercicioId: se.id },
+              });
+              await tx.serieTiempo.deleteMany({
+                where: { semanaEjercicioId: se.id },
+              });
+            }
+            await tx.semanaEjercicio.deleteMany({ where: { semanaId: semana.id } });
+          }
+          await tx.semana.deleteMany({ where: { entrenamientoId: entrenamiento.id } });
+          await tx.entrenamiento.delete({ where: { id: entrenamiento.id } });
+        }
+      }
+      await tx.rutina.deleteMany({ where: { clienteId: id } });
 
       await tx.cliente.delete({ where: { id } });
+
+      // Limpia gastos (si existieran) y finalmente elimina el usuario
+      await tx.gasto.deleteMany({ where: { usuarioId: cliente.usuarioId } });
+      await tx.usuario.delete({ where: { id: cliente.usuarioId } });
     });
 
     return { ok: true };
