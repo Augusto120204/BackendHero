@@ -15,6 +15,8 @@ import { AdministradorModule } from './administrador/administrador.module';
 import { EntrenadorModule } from './entrenador/entrenador.module';
 import { RecepcionistaModule } from './recepcionista/recepcionista.module';
 import { RutinaModule } from './rutina/rutina.module';
+import { EntrenamientoModule } from './entrenamiento/entrenamiento.module';
+import { SemanaModule } from './semana/semana.module';
 
 @Module({
   imports: [
@@ -34,6 +36,8 @@ import { RutinaModule } from './rutina/rutina.module';
     EntrenadorModule,
     RecepcionistaModule,
     RutinaModule,
+    EntrenamientoModule,
+    SemanaModule,
   ],
 })
 export class AppModule {}
