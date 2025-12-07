@@ -67,6 +67,15 @@ model Cliente {
   compras          Compra[]
   planes           ClientePlan[]
   rutinas          Rutina[]
+  asistencias      Asistencia[]
+}
+
+model Asistencia {
+  id          Int      @id @default(autoincrement())
+  clienteId   Int
+  fecha       DateTime
+
+  cliente     Cliente  @relation(fields: [clienteId], references: [id])
 }
 
 model Medida {
