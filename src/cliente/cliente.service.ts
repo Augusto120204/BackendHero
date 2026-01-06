@@ -203,75 +203,29 @@ export class ClienteService {
     return this.prisma.cliente.update({ where: { id }, data: dto });
   }
 
-  async remove(id: number) {
-    const cliente = await this.prisma.cliente.findUnique({
-      where: { id },
-      select: { usuarioId: true },
-    });
-    if (!cliente) throw new NotFoundException('Cliente no encontrado');
-
-    await this.prisma.$transaction(async (tx) => {
-      // ClientePlan dependencias: pagos y deudas
-      const cps = await tx.clientePlan.findMany({
-        where: { clienteId: id },
-        select: { id: true },
-      });
-      const cpIds = cps.map((x) => x.id);
-      if (cpIds.length) {
-        await tx.pago.deleteMany({ where: { clientePlanId: { in: cpIds } } });
-        await tx.deuda.deleteMany({ where: { clientePlanId: { in: cpIds } } });
-      }
-      await tx.clientePlan.deleteMany({ where: { clienteId: id } });
-
-      // Otras dependencias directas
-      await tx.compra.deleteMany({ where: { clienteId: id } });
-      await tx.novedad.deleteMany({ where: { clienteId: id } });
-      await tx.clienteMedida.deleteMany({ where: { clienteId: id } });
-
-      // Rutinas y árbol asociado (entrenamiento -> semanas -> semanaEjercicio -> series)
-      const rutinas = await tx.rutina.findMany({
-        where: { clienteId: id },
-        select: { id: true },
-      });
-      for (const rutina of rutinas) {
-        const entrenamiento = await tx.entrenamiento.findUnique({
-          where: { rutinaId: rutina.id },
+  // TODO: agregar delete cascade en prisma
+    async remove(id: number) {
+        // 1. Buscas el usuarioId antes de borrar para limpiar la tabla Usuario después
+        const cliente = await this.prisma.cliente.findUnique({
+            where: { id },
+            select: { usuarioId: true },
         });
-        if (entrenamiento) {
-          const semanas = await tx.semana.findMany({
-            where: { entrenamientoId: entrenamiento.id },
-            select: { id: true },
-          });
-          for (const semana of semanas) {
-            const semanaEjercicios = await tx.semanaEjercicio.findMany({
-              where: { semanaId: semana.id },
-              select: { id: true },
-            });
-            for (const se of semanaEjercicios) {
-              await tx.serieRep.deleteMany({
-                where: { semanaEjercicioId: se.id },
-              });
-              await tx.serieTiempo.deleteMany({
-                where: { semanaEjercicioId: se.id },
-              });
-            }
-            await tx.semanaEjercicio.deleteMany({ where: { semanaId: semana.id } });
-          }
-          await tx.semana.deleteMany({ where: { entrenamientoId: entrenamiento.id } });
-          await tx.entrenamiento.delete({ where: { id: entrenamiento.id } });
-        }
-      }
-      await tx.rutina.deleteMany({ where: { clienteId: id } });
 
-      await tx.cliente.delete({ where: { id } });
+        if (!cliente) throw new NotFoundException('Cliente no encontrado');
 
-      // Limpia gastos (si existieran) y finalmente elimina el usuario
-      await tx.gasto.deleteMany({ where: { usuarioId: cliente.usuarioId } });
-      await tx.usuario.delete({ where: { id: cliente.usuarioId } });
-    });
+        // 2. Al borrar el cliente, la BD borra AUTOMÁTICAMENTE:
+        // Rutinas -> Entrenamientos -> Semanas -> Ejercicios -> Series, Pagos, Deudas, etc.
+        // gracias al onDelete: Cascade definido en el schema.
+        await this.prisma.cliente.delete({
+            where: { id },
+        });
 
-    return { ok: true };
-  }
+        // 3. Limpieza final del usuario (si también tiene configurado cascade en Gasto, es una sola línea)
+        // Si Gasto tiene cascade hacia Usuario, solo necesitas:
+        await this.prisma.usuario.delete({ where: { id: cliente.usuarioId } });
+
+        return { ok: true };
+    }
 
   async findRecientes(limit = 10) {
     // Trae clientes más recientes por id (si no hay createdAt)
