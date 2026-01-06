@@ -34,10 +34,14 @@ export class AuthService {
     const entrenador = await this.prisma.entrenador.findFirst({
       where: { usuarioId: usuario.id },
     });
+    const cliente = await this.prisma.cliente.findFirst({
+      where: { usuarioId: usuario.id },
+    });
 
     if (admin) rol = 'ADMIN';
     else if (recep) rol = 'RECEPCIONISTA';
     else if (entrenador) rol = 'ENTRENADOR';
+    else if (cliente) rol = 'CLIENTE';
 
     // const payload = { sub: usuario.id, userName: usuario.userName, cedula: usuario.cedula, role: rol };
 

@@ -5,11 +5,15 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
+import { ClienteService } from '../cliente/cliente.service';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsuariosService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private clienteService: ClienteService,
+  ) {}
 
   async crear(dto: CreateUsuarioDto) {
     const existente = await this.prisma.usuario.findUnique({
@@ -158,6 +162,19 @@ export class UsuariosService {
           rol: 'recepcionista',
         }));
       }
+      case 'cliente': {
+        const rows = await this.prisma.cliente.findMany({
+          include: { usuario: true },
+        });
+        return rows.map((r) => ({
+          id: r.usuario.id,
+          userName: r.usuario.userName,
+          nombres: r.usuario.nombres,
+          apellidos: r.usuario.apellidos,
+          cedula: r.usuario.cedula,
+          rol: 'cliente',
+        }));
+      }
       default:
         // Si no se pasa rol, devolver vacío para evitar respuestas grandes no usadas
         return [];
@@ -174,7 +191,16 @@ export class UsuariosService {
   }
 
   async eliminar(usuarioId: number) {
-    // Eliminar rol asociado si existe y luego el usuario
+    // Verificar si el usuario es un cliente
+    const cliente = await this.prisma.cliente.findFirst({ where: { usuarioId } });
+    
+    if (cliente) {
+      // Si es cliente, delegar la eliminación completa a ClienteService
+      // que ya maneja todas las dependencias (planes, pagos, rutinas, etc.)
+      return this.clienteService.remove(cliente.id);
+    }
+
+    // Si no es cliente, eliminar rol asociado y luego el usuario
     await this.prisma.$transaction(async (tx) => {
       const admin = await tx.administrador.findFirst({ where: { usuarioId } });
       if (admin) await tx.administrador.delete({ where: { id: admin.id } });
@@ -184,6 +210,9 @@ export class UsuariosService {
 
       const rec = await tx.recepcionista.findFirst({ where: { usuarioId } });
       if (rec) await tx.recepcionista.delete({ where: { id: rec.id } });
+
+      // Eliminar gastos asociados
+      await tx.gasto.deleteMany({ where: { usuarioId } });
 
       await tx.usuario.delete({ where: { id: usuarioId } });
     });

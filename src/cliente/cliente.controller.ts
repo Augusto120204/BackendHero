@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
   Query,
+  Request,
 } from '@nestjs/common';
 
 import { ClienteService } from './cliente.service';
@@ -23,11 +24,13 @@ export class ClienteController {
   constructor(private readonly clienteService: ClienteService) {}
 
   @Post()
+  @Roles(Role.ADMIN, Role.RECEPCIONISTA)
   create(@Body() dto: CreateClienteDto) {
     return this.clienteService.create(dto);
   }
 
   @Get()
+  @Roles(Role.ADMIN, Role.RECEPCIONISTA, Role.ENTRENADOR)
   async findAll(
     @Query('page') page = '1',
     @Query('limit') limit = '10',
@@ -54,21 +57,34 @@ export class ClienteController {
   }
 
   @Get('recientes')
+  @Roles(Role.ADMIN, Role.RECEPCIONISTA, Role.ENTRENADOR)
   findRecientes(@Query('limit') limit = '10') {
     return this.clienteService.findRecientes(Number(limit) || 10);
   }
 
+  // Endpoint para que los clientes accedan a su propia información
+  @Get('mi-perfil')
+  @Roles(Role.CLIENTE)
+  async getMiPerfil(@Request() req) {
+    // El usuarioId viene del JWT token
+    const usuarioId = req.user.sub;
+    return this.clienteService.findByUsuarioId(usuarioId);
+  }
+
   @Get(':id')
+  @Roles(Role.ADMIN, Role.RECEPCIONISTA, Role.ENTRENADOR)
   findOne(@Param('id') id: string) {
     return this.clienteService.findOne(+id);
   }
 
   @Patch(':id')
+  @Roles(Role.ADMIN, Role.RECEPCIONISTA)
   update(@Param('id') id: string, @Body() dto: UpdateClienteDto) {
     return this.clienteService.update(+id, dto);
   }
 
   @Delete(':id')
+  @Roles(Role.ADMIN)
   remove(@Param('id') id: string) {
     return this.clienteService.remove(+id);
   }
