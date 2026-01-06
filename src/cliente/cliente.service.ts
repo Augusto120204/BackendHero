@@ -64,12 +64,14 @@ export class ClienteService {
           sexo: true,
           objetivos: true,
           tiempoEntrenar: true,
+          observaciones: true,
           usuario: {
             select: {
               id: true,
               nombres: true,
               apellidos: true,
               cedula: true,
+              fechaNacimiento: true,
             },
           },
           planes: {
@@ -195,7 +197,9 @@ export class ClienteService {
   }
 
   async update(id: number, dto: UpdateClienteDto) {
+    console.log('Actualizar cliente', id, dto);
     await this.findOne(id);
+    console.log('Cliente encontrado, procediendo a actualizar');
     return this.prisma.cliente.update({ where: { id }, data: dto });
   }
 

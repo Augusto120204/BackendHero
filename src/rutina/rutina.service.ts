@@ -97,13 +97,24 @@ export class RutinaService {
         entrenamiento: {
           include: {
             semanas: {
+              orderBy: { numero: 'asc' },
               include: {
-                musculo: true,
-                semanaEjercicios: {
+                musculosSemana: {
+                  orderBy: { orden: 'asc' },
                   include: {
-                    ejercicio: true,
-                    seriesReps: true,
-                    seriesTiempos: true,
+                    musculo: true,
+                    ejerciciosMusculo: {
+                      orderBy: { orden: 'asc' },
+                      include: {
+                        ejercicio: true,
+                        seriesReps: {
+                          orderBy: { orden: 'asc' },
+                        },
+                        seriesTiempos: {
+                          orderBy: { orden: 'asc' },
+                        },
+                      },
+                    },
                   },
                 },
               },
