@@ -1,6 +1,8 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { AsistenciaService } from '../asistencia/asistencia.service';
+
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -8,6 +10,7 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private asistenciaService: AsistenciaService,
   ) {}
 
   async login(cedula: string, password: string) {
@@ -44,6 +47,10 @@ export class AuthService {
     else if (cliente) rol = 'CLIENTE';
 
     // const payload = { sub: usuario.id, userName: usuario.userName, cedula: usuario.cedula, role: rol };
+    
+    if (rol === 'CLIENTE' && cliente) {
+      await this.asistenciaService.registrarAsistencia(cliente.id);
+    }
 
     return {
       access_token: this.jwtService.sign({
@@ -51,6 +58,7 @@ export class AuthService {
         userName: usuario.userName,
         cedula: usuario.cedula,
         rol,
+        clienteId: cliente?.id,
       }),
     };
   }

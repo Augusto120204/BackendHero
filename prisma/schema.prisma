@@ -5,7 +5,7 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["relationJoins"]
 }
 
@@ -15,19 +15,19 @@ datasource db {
 }
 
 model Usuario {
-  id              Int             @id @default(autoincrement())
+  id              Int    @id @default(autoincrement())
   userName        String
   password        String
   nombres         String
   apellidos       String
-  cedula          String          @unique
+  cedula          String @unique
   fechaNacimiento String
 
-  administrador   Administrador[]
-  entrenador      Entrenador[]
-  recepcionista   Recepcionista[]
-  cliente         Cliente[]
-  gastos          Gasto[]
+  administrador Administrador[]
+  entrenador    Entrenador[]
+  recepcionista Recepcionista[]
+  cliente       Cliente[]
+  gastos        Gasto[]
 }
 
 model Administrador {
@@ -53,121 +53,124 @@ model Recepcionista {
 }
 
 model Cliente {
-  id               Int               @id
-  usuarioId        Int               @unique
-  horario          String
-  sexo             String
-  observaciones    String
-  objetivos        String
-  tiempoEntrenar   Int
+  id             Int    @id
+  usuarioId      Int    @unique
+  horario        String
+  sexo           String
+  observaciones  String
+  objetivos      String
+  tiempoEntrenar Int
 
-  usuario         Usuario           @relation(fields: [usuarioId], references: [id])
-  clienteMedidas  ClienteMedida[]
-  novedades        Novedad[]
-  compras          Compra[]
-  planes           ClientePlan[]
-  rutinas          Rutina[]
+  usuario        Usuario         @relation(fields: [usuarioId], references: [id])
+  clienteMedidas ClienteMedida[]
+  novedades      Novedad[]
+  compras        Compra[]
+  planes         ClientePlan[]
+  rutinas        Rutina[]
+  asistencias    Asistencia[]
 }
 
 model Medida {
-  id              Int              @id @default(autoincrement())
-  nombre          String
-  clienteMedidas  ClienteMedida[]
+  id             Int             @id @default(autoincrement())
+  nombre         String
+  clienteMedidas ClienteMedida[]
 }
 
 model ClienteMedida {
-  id         Int     @id @default(autoincrement())
-  clienteId  Int
-  medidaId   Int
-  medida     Int
+  id        Int @id @default(autoincrement())
+  clienteId Int
+  medidaId  Int
+  medida    Int
 
   cliente    Cliente @relation(fields: [clienteId], references: [id])
   medidaTipo Medida  @relation(fields: [medidaId], references: [id])
 }
 
 model Novedad {
-  id          Int      @id @default(autoincrement())
-  clienteId   Int
-  novedad     String
-  fecha       DateTime
-  solventada  Boolean
+  id         Int      @id @default(autoincrement())
+  clienteId  Int
+  novedad    String
+  fecha      DateTime
+  solventada Boolean
 
-  cliente     Cliente  @relation(fields: [clienteId], references: [id])
+  cliente Cliente @relation(fields: [clienteId], references: [id])
 }
 
 model Producto {
-  id       Int       @id @default(autoincrement())
-  nombre   String
-  precio   Float
-  stock    Int
-  estado   Boolean
+  id     Int     @id @default(autoincrement())
+  nombre String
+  precio Float
+  stock  Int
+  estado Boolean
 
-  compras  Compra[]
+  compras Compra[]
 }
 
 model Compra {
-  id         Int       @id @default(autoincrement())
+  id         Int      @id @default(autoincrement())
   productoId Int
   clienteId  Int
   cantidad   Int
   total      Float
   fecha      DateTime
 
-  producto   Producto  @relation(fields: [productoId], references: [id])
-  cliente    Cliente   @relation(fields: [clienteId], references: [id])
+  producto Producto @relation(fields: [productoId], references: [id])
+  cliente  Cliente  @relation(fields: [clienteId], references: [id])
 }
 
 model Plan {
-  id            Int            @id @default(autoincrement())
-  nombre        String
-  precio        Float 
-  mesesPagar    Int
-  clientePlan   ClientePlan[]
+  id              Int             @id @default(autoincrement())
+  nombre          String
+  precio          Float
+  duracion        Int
+  unidadDuracion  UnidadDuracion  @default(MESES)
+  clientePlan     ClientePlan[]
 }
 
 model ClientePlan {
-  id           Int           @id @default(autoincrement())
-  clienteId    Int
-  planId       Int
-  fechaInicio  DateTime
-  fechaFin     DateTime
-  diaPago      Int
-  activado     Boolean
+  id          Int      @id @default(autoincrement())
+  clienteId   Int
+  planId      Int
+  fechaInicio DateTime
+  fechaFin    DateTime
+  diaPago     Int
+  activado    Boolean
 
-  cliente      Cliente     @relation(fields: [clienteId], references: [id])
-  plan         Plan        @relation(fields: [planId], references: [id])
-  pago         Pago[]
-  deudas       Deuda[]
+  cliente  Cliente   @relation(fields: [clienteId], references: [id])
+  plan     Plan      @relation(fields: [planId], references: [id])
+  pago     Pago[]
+  deudas   Deuda[]
+  facturas Factura[]
 }
 
 model Pago {
-  id              Int           @id @default(autoincrement())
-  clientePlanId   Int
-  monto           Float
-  fecha           DateTime
+  id            Int      @id @default(autoincrement())
+  clientePlanId Int
+  monto         Float
+  fecha         DateTime
 
-  clientePlan     ClientePlan   @relation(fields: [clientePlanId], references: [id])
+  clientePlan ClientePlan @relation(fields: [clientePlanId], references: [id])
 }
 
 model Deuda {
-  id              Int           @id @default(autoincrement())
-  clientePlanId   Int
-  monto           Float
-  solventada      Boolean
+  id            Int     @id @default(autoincrement())
+  clientePlanId Int
+  monto         Float
+  solventada    Boolean
 
-  clientePlan     ClientePlan   @relation(fields: [clientePlanId], references: [id])
+  clientePlan ClientePlan @relation(fields: [clientePlanId], references: [id])
 }
 
 model Rutina {
-  id              Int           @id @default(autoincrement())
-  clienteId       Int
-  rutina          Bytes
-  fechaInicio     DateTime
-  fechaFin        DateTime
-  observacion     String
+  id          Int      @id @default(autoincrement())
+  clienteId   Int
+  rutina      Bytes
+  fechaInicio DateTime
+  fechaFin    DateTime
+  observacion String
 
-  cliente         Cliente        @relation(fields: [clienteId], references: [id])
-  entrenamiento   Entrenamiento? @relation("RutinaEntrenamiento") // sin fields ni references
+  cliente       Cliente        @relation(fields: [clienteId], references: [id])
+  entrenamiento Entrenamiento? @relation("RutinaEntrenamiento") // sin fields ni references
 }
 
 model Entrenamiento {
@@ -175,69 +178,68 @@ model Entrenamiento {
   rutinaId   Int     @unique
   finalizado Boolean
 
-  rutina     Rutina  @relation("RutinaEntrenamiento", fields: [rutinaId], references: [id])
-  semanas    Semana[]
-
-} 
+  rutina  Rutina   @relation("RutinaEntrenamiento", fields: [rutinaId], references: [id])
+  semanas Semana[]
+}
 
 model Semana {
-  id               Int         @id @default(autoincrement())
-  numero           Int
-  musculoId        Int
-  entrenamientoId  Int
+  id              Int @id @default(autoincrement())
+  numero          Int
+  musculoId       Int
+  entrenamientoId Int
 
-  musculo          Musculo       @relation(fields: [musculoId], references: [id])
-  entrenamiento    Entrenamiento @relation(fields: [entrenamientoId], references: [id])
+  musculo          Musculo           @relation(fields: [musculoId], references: [id])
+  entrenamiento    Entrenamiento     @relation(fields: [entrenamientoId], references: [id])
   semanaEjercicios SemanaEjercicio[]
 }
 
 model Musculo {
-  id      Int       @id @default(autoincrement())
-  nombre  String
+  id     Int    @id @default(autoincrement())
+  nombre String
 
   semanas Semana[]
 }
 
 model SemanaEjercicio {
-  id              Int          @id @default(autoincrement())
-  ejercicioId     Int
-  semanaId        Int
-  orden           Int
+  id          Int @id @default(autoincrement())
+  ejercicioId Int
+  semanaId    Int
+  orden       Int
 
-  semana          Semana       @relation(fields: [semanaId], references: [id])
-  ejercicio       Ejercicio    @relation(fields: [ejercicioId], references: [id])
-  seriesReps      SerieRep[]
-  seriesTiempos   SerieTiempo[]
+  semana        Semana        @relation(fields: [semanaId], references: [id])
+  ejercicio     Ejercicio     @relation(fields: [ejercicioId], references: [id])
+  seriesReps    SerieRep[]
+  seriesTiempos SerieTiempo[]
 }
 
 model Ejercicio {
-  id                 Int               @id @default(autoincrement())
-  nombre             String
-  foto               Bytes
+  id     Int    @id @default(autoincrement())
+  nombre String
+  foto   Bytes
 
-  semanasEjercicios  SemanaEjercicio[]
+  semanasEjercicios SemanaEjercicio[]
 }
 
 model SerieRep {
-  id                  Int              @id @default(autoincrement())
-  semanaEjercicioId   Int
-  orden               Int
-  peso                Float
-  repeticiones        Int
-  unidadMedida        String
+  id                Int    @id @default(autoincrement())
+  semanaEjercicioId Int
+  orden             Int
+  peso              Float
+  repeticiones      Int
+  unidadMedida      String
 
-  semanaEjercicio     SemanaEjercicio  @relation(fields: [semanaEjercicioId], references: [id])
+  semanaEjercicio SemanaEjercicio @relation(fields: [semanaEjercicioId], references: [id])
 }
 
 model SerieTiempo {
-  id                  Int              @id @default(autoincrement())
-  semanaEjercicioId   Int
-  orden               Int
-  peso                Float
-  tiempo              Int
-  unidadMedida        String
+  id                Int    @id @default(autoincrement())
+  semanaEjercicioId Int
+  orden             Int
+  peso              Float
+  tiempo            Int
+  unidadMedida      String
 
-  semanaEjercicio     SemanaEjercicio  @relation(fields: [semanaEjercicioId], references: [id])
+  semanaEjercicio SemanaEjercicio @relation(fields: [semanaEjercicioId], references: [id])
 }
 
 model Gasto {
@@ -249,3 +251,43 @@ model Gasto {
   usuario     Usuario  @relation(fields: [usuarioId], references: [id])
 }
 
+model Asistencia {
+  id          Int      @id @default(autoincrement())
+  clienteId   Int
+  fecha       DateTime @default(now())
+  horaEntrada DateTime @default(now())
+
+  cliente Cliente @relation(fields: [clienteId], references: [id])
+
+  @@unique([clienteId, fecha(sort: Desc)]) // Solo 1 asistencia por día
+  @@index([clienteId, fecha])
+}
+
+model Factura {
+  id            Int    @id @default(autoincrement())
+  numero        String @unique
+  clientePlanId Int
+
+  subtotal Float
+  iva      Float
+  total    Float
+
+  totalPagado Float @default(0)
+  saldo       Float
+
+  estado       EstadoFactura
+  fechaEmision DateTime      @default(now())
+
+  clientePlan ClientePlan @relation(fields: [clientePlanId], references: [id])
+}
+
+enum EstadoFactura {
+  PENDIENTE
+  PAGADA
+  ANULADA
+}
+
+enum UnidadDuracion {
+  MESES
+  DIAS
+}

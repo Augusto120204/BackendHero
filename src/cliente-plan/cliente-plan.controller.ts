@@ -40,5 +40,14 @@ remove(@Param('id') id: string) {
   return this.clientePlanService.remove(+id);
 }
 
+@Post('renovar/:clienteId')
+async renovarPlan(
+  @Param('clienteId') clienteId: string,
+  @Body() dto: CreateClientePlanDto
+) {
+  // Asegurar que el clienteId del DTO coincida con el parámetro
+  dto.clienteId = +clienteId;
+  return this.clientePlanService.create(dto);
+}
 
 }

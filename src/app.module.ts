@@ -15,6 +15,9 @@ import { AdministradorModule } from './administrador/administrador.module';
 import { EntrenadorModule } from './entrenador/entrenador.module';
 import { RecepcionistaModule } from './recepcionista/recepcionista.module';
 import { RutinaModule } from './rutina/rutina.module';
+import { CompraModule } from './compra/compra.module';
+import { AsistenciaModule } from './asistencia/asistencia.module';
+import { FacturaModule } from './factura/factura.module';
 
 @Module({
   imports: [
@@ -34,6 +37,9 @@ import { RutinaModule } from './rutina/rutina.module';
     EntrenadorModule,
     RecepcionistaModule,
     RutinaModule,
+    CompraModule,
+    AsistenciaModule,
+    FacturaModule,
   ],
 })
 export class AppModule {}

@@ -1,4 +1,9 @@
-import { IsInt, IsNotEmpty, IsNumber, IsPositive, IsString } from "class-validator";
+import { IsInt, IsNotEmpty, IsNumber, IsPositive, IsString, IsEnum } from "class-validator";
+
+export enum UnidadDuracion {
+    MESES = 'MESES',
+    DIAS = 'DIAS'
+}
 
 export class CreatePlanDto {
     @IsNotEmpty()
@@ -13,5 +18,9 @@ export class CreatePlanDto {
     @IsNotEmpty()
     @IsInt()
     @IsPositive()
-    mesesPagar: number;
+    duracion: number;
+
+    @IsNotEmpty()
+    @IsEnum(UnidadDuracion)
+    unidadDuracion: UnidadDuracion;
 }

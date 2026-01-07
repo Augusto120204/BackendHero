@@ -2,10 +2,14 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateClientePlanDto } from './dto/create-cliente-plan.dto';
 import { UpdateClientePlanDto } from './dto/update-cliente-plan.dto';
+import { FacturaService } from 'src/factura/factura.service';
 
 @Injectable()
 export class ClientePlanService {
-    constructor(private prisma: PrismaService){}
+    constructor(
+      private prisma: PrismaService,
+      private facturaService: FacturaService
+    ){}
 
     async create(dto: CreateClientePlanDto) {
     const hoy = new Date();
@@ -55,17 +59,39 @@ export class ClientePlanService {
       console.log(`[ClientePlan] No hay deudas anteriores para este cliente`);
     }
 
-    // 2. Crear el nuevo plan
-    return this.prisma.clientePlan.create({
-      data: {
-        fechaInicio: new Date(dto.fechaInicio),
-        fechaFin: new Date(dto.fechaFin),
-        diaPago: dto.diaPago,
-        activado: dto.activado,
-        cliente: { connect: { id: dto.clienteId } },
-        plan: { connect: { id: dto.planId } },
-      },
+    // 2. Obtener el precio del plan para generar la deuda
+    const plan = await this.prisma.plan.findUnique({
+      where: { id: dto.planId },
     });
+
+    if (!plan) {
+      throw new NotFoundException('Plan no encontrado');
+    }
+
+    console.log(`[ClientePlan] Creando plan con deuda inicial de: $${plan.precio}`);
+
+    // 3. Crear el nuevo plan con la deuda inicial
+    const clientePlan = await this.prisma.clientePlan.create({
+  data: {
+    fechaInicio: new Date(dto.fechaInicio),
+    fechaFin: new Date(dto.fechaFin),
+    diaPago: dto.diaPago,
+    activado: dto.activado,
+    cliente: { connect: { id: dto.clienteId } },
+    plan: { connect: { id: dto.planId } },
+    deudas: {
+      create: {
+        monto: plan.precio,
+        solventada: false,
+      },
+    },
+  },
+});
+
+await this.facturaService.crearFactura(clientePlan.id);
+
+return clientePlan;
+
   }
 
     findAll(){
