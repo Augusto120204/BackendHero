@@ -59,20 +59,26 @@ export class NotificationsService {
   }
 
   async findAllByUser(usuarioId: number) {
-    return this.prisma.notificacion.findMany({
+    console.log('[NotificationsService] Buscando notificaciones para usuarioId:', usuarioId);
+    const notificaciones = await this.prisma.notificacion.findMany({
       where: { usuarioId },
       orderBy: { createdAt: 'desc' },
     });
+    console.log(`[NotificationsService] Encontradas ${notificaciones.length} notificaciones para usuarioId ${usuarioId}`);
+    return notificaciones;
   }
 
   async findUnreadByUser(usuarioId: number) {
-    return this.prisma.notificacion.findMany({
+    console.log('[NotificationsService] Buscando notificaciones no leídas para usuarioId:', usuarioId);
+    const notificaciones = await this.prisma.notificacion.findMany({
       where: {
         usuarioId,
         leida: false,
       },
       orderBy: { createdAt: 'desc' },
     });
+    console.log(`[NotificationsService] Encontradas ${notificaciones.length} notificaciones no leídas para usuarioId ${usuarioId}`);
+    return notificaciones;
   }
 
   async markAsRead(id: number) {
@@ -105,6 +111,8 @@ export class NotificationsService {
       throw new Error('Cliente no encontrado');
     }
 
+    console.log(`[NotificationsService] Creando notificación de rutina asignada para clienteId: ${clienteId}, usuarioId: ${cliente.usuarioId}`);
+
     return this.create({
       usuarioId: cliente.usuarioId,
       tipo: 'rutina_asignada',
@@ -133,6 +141,8 @@ export class NotificationsService {
       },
     });
 
+    console.log(`[NotificationsService] Notificando perfil ${accion} a ${entrenadores.length} entrenadores`);
+
     const mensaje =
       accion === 'completado'
         ? `${cliente.usuario.nombres} ${cliente.usuario.apellidos} ha completado su perfil`
@@ -141,21 +151,22 @@ export class NotificationsService {
     const tipo = accion === 'completado' ? 'perfil_completado' : 'perfil_actualizado';
 
     // Crear notificación para cada entrenador
-    const notificaciones = entrenadores.map((entrenador) =>
-      this.create({
+    const notificaciones = entrenadores.map((entrenador) => {
+      console.log(`[NotificationsService] Creando notificación para entrenadorId: ${entrenador.id}, usuarioId: ${entrenador.usuarioId}`);
+      return this.create({
         usuarioId: entrenador.usuarioId,
         tipo,
         mensaje,
         metadata: JSON.stringify({ clienteId }),
-      }),
-    );
+      });
+    });
 
     return Promise.all(notificaciones);
   }
 
   // Método para que un cliente solicite una nueva rutina
   async crearSolicitudRutina(clienteId: number) {
-    const cliente = await this.prisma.cliente.findUnique({
+    const cliente = await this.prisma.cliente.findFirst({
       where: { usuarioId: clienteId },
       include: {
         usuario: true,
@@ -173,17 +184,20 @@ export class NotificationsService {
       },
     });
 
+    console.log(`[NotificationsService] Creando solicitud de rutina para ${entrenadores.length} entrenadores`);
+
     const mensaje = `${cliente.usuario.nombres} ${cliente.usuario.apellidos} ha solicitado una nueva rutina`;
 
     // Crear notificación para cada entrenador
-    const notificaciones = entrenadores.map((entrenador) =>
-      this.create({
+    const notificaciones = entrenadores.map((entrenador) => {
+      console.log(`[NotificationsService] Creando notificación para entrenadorId: ${entrenador.id}, usuarioId: ${entrenador.usuarioId}`);
+      return this.create({
         usuarioId: entrenador.usuarioId,
         tipo: 'solicitud_rutina',
         mensaje,
         metadata: JSON.stringify({ clienteId: cliente.id }),
-      }),
-    );
+      });
+    });
 
     return Promise.all(notificaciones);
   }

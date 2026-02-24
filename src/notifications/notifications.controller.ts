@@ -27,6 +27,7 @@ export class NotificationsController {
   @Get()
   findAll(@Request() req) {
     const userId = req.user.userId;
+    console.log('[NotificationsController] Obteniendo notificaciones para userId:', userId);
     return this.notificationsService.findAllByUser(userId);
   }
 
@@ -34,6 +35,7 @@ export class NotificationsController {
   @Get('no-leidas')
   findUnread(@Request() req) {
     const userId = req.user.userId;
+    console.log('[NotificationsController] Obteniendo notificaciones no leídas para userId:', userId);
     return this.notificationsService.findUnreadByUser(userId);
   }
 
