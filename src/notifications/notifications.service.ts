@@ -134,14 +134,20 @@ export class NotificationsService {
       throw new Error('Cliente no encontrado');
     }
 
-    // Obtener todos los entrenadores
+    // Obtener todos los entrenadores excluyendo al usuario cliente
+    // (en caso de que el usuario tenga rol de entrenador también)
     const entrenadores = await this.prisma.entrenador.findMany({
+      where: {
+        usuarioId: {
+          not: cliente.usuarioId, // Excluir al cliente
+        },
+      },
       include: {
         usuario: true,
       },
     });
 
-    console.log(`[NotificationsService] Notificando perfil ${accion} a ${entrenadores.length} entrenadores`);
+    console.log(`[NotificationsService] Notificando perfil ${accion} a ${entrenadores.length} entrenadores (excluyendo al cliente)`);
 
     const mensaje =
       accion === 'completado'
@@ -177,14 +183,20 @@ export class NotificationsService {
       throw new Error('Cliente no encontrado');
     }
 
-    // Obtener todos los entrenadores
+    // Obtener todos los entrenadores excluyendo al usuario solicitante
+    // (en caso de que el usuario tenga rol de entrenador también)
     const entrenadores = await this.prisma.entrenador.findMany({
+      where: {
+        usuarioId: {
+          not: clienteId, // Excluir al usuario solicitante
+        },
+      },
       include: {
         usuario: true,
       },
     });
 
-    console.log(`[NotificationsService] Creando solicitud de rutina para ${entrenadores.length} entrenadores`);
+    console.log(`[NotificationsService] Creando solicitud de rutina para ${entrenadores.length} entrenadores (excluyendo al solicitante)`);
 
     const mensaje = `${cliente.usuario.nombres} ${cliente.usuario.apellidos} ha solicitado una nueva rutina`;
 
