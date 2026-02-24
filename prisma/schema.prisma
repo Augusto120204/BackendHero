@@ -58,7 +58,7 @@ model Cliente {
   usuarioId        Int               @unique
   horario          String
   sexo             String
-  observaciones    String
+  observaciones    String?
   objetivos        String
   tiempoEntrenar   Int
 
