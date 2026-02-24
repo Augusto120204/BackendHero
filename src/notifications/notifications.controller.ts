@@ -26,7 +26,7 @@ export class NotificationsController {
   // Obtener todas las notificaciones del usuario autenticado
   @Get()
   findAll(@Request() req) {
-    const userId = req.user.userId;
+    const userId = req.user.sub;
     console.log('[NotificationsController] Obteniendo notificaciones para userId:', userId);
     return this.notificationsService.findAllByUser(userId);
   }
@@ -34,7 +34,7 @@ export class NotificationsController {
   // Obtener notificaciones no leídas del usuario autenticado
   @Get('no-leidas')
   findUnread(@Request() req) {
-    const userId = req.user.userId;
+    const userId = req.user.sub;
     console.log('[NotificationsController] Obteniendo notificaciones no leídas para userId:', userId);
     return this.notificationsService.findUnreadByUser(userId);
   }
@@ -48,14 +48,14 @@ export class NotificationsController {
   // Marcar todas las notificaciones del usuario como leídas
   @Patch('leer-todas')
   markAllAsRead(@Request() req) {
-    const userId = req.user.userId;
+    const userId = req.user.sub;
     return this.notificationsService.markAllAsRead(userId);
   }
 
   // Solicitar rutina nueva (endpoint específico para clientes)
   @Post('solicitar-rutina')
   async solicitarRutina(@Request() req) {
-    const clienteId = req.user.userId;
+    const clienteId = req.user.sub;
     return this.notificationsService.crearSolicitudRutina(clienteId);
   }
 }
