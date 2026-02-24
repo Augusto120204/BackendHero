@@ -1,0 +1,147 @@
+================================================================================
+                    CREDENCIALES DE USUARIOS DE PRUEBA
+                           BACKEND HERO - GYM APP
+================================================================================
+
+IMPORTANTE: Todos los usuarios tienen la misma contraseña: password123
+
+================================================================================
+1. ADMINISTRADOR
+================================================================================
+Rol:              ADMINISTRADOR
+Nombre Completo:  Carlos Administrador López
+Cédula:           1234567890
+Contraseña:       password123
+Username:         admin_principal
+Fecha Nacimiento: 1985-05-15
+
+Descripción: Usuario con rol de administrador con acceso total al sistema.
+
+
+================================================================================
+2. ENTRENADOR
+================================================================================
+Rol:              ENTRENADOR
+Nombre Completo:  Juan Pérez Martínez
+Cédula:           0987654321
+Contraseña:       password123
+Username:         entrenador_juan
+Fecha Nacimiento: 1990-08-22
+Horario:          Mañana
+Sueldo:           $1,500.00
+
+Descripción: Entrenador que trabaja en horario de mañana.
+
+
+================================================================================
+3. CLIENTE COMPLETO
+================================================================================
+Rol:              CLIENTE
+Nombre Completo:  María García Rodríguez
+Cédula:           1122334455
+Contraseña:       password123
+Username:         cliente_maria
+Fecha Nacimiento: 1995-03-10
+Horario:          Tarde
+Sexo:             Femenino
+Objetivos:        Perder peso y tonificar músculos
+Tiempo Entrenar:  60 minutos
+Observaciones:    Cliente activa y comprometida con sus entrenamientos
+
+Descripción: Cliente con todos sus datos completos en el sistema. Tiene un 
+             plan activo asignado (Plan Básico Mensual).
+
+
+================================================================================
+4. CLIENTE INCOMPLETO
+================================================================================
+Rol:              SIN_ROL (Solo Usuario, sin perfil de Cliente)
+Nombre Completo:  Pedro Sánchez Gómez
+Cédula:           5544332211
+Contraseña:       password123
+Username:         cliente_pedro_incompleto
+Fecha Nacimiento: 1998-11-28
+
+Descripción: Este usuario solo existe en la tabla Usuario, pero NO tiene 
+             registro en la tabla Cliente. Representa un usuario que se 
+             registró pero aún no completó su perfil de cliente.
+
+
+================================================================================
+                            DATOS ADICIONALES CREADOS
+================================================================================
+
+PLANES:
+- Plan Básico Mensual: $50.00 (1 mes)
+
+MEDIDAS:
+- Peso, Altura, Pecho, Cintura, Cadera
+
+PRODUCTOS:
+- Proteína Whey: $45.00 (Stock: 20)
+- Creatina: $30.00 (Stock: 15)
+- Toalla de gimnasio: $12.00 (Stock: 50)
+
+MÚSCULOS:
+- Pecho, Espalda, Piernas, Hombros, Brazos, Abdominales
+
+EJERCICIOS:
+- Press de banca, Sentadilla, Peso muerto, Dominadas, Press militar, 
+  Curl de bíceps, Extensión de tríceps, Crunches
+
+
+================================================================================
+                            CÓMO USAR ESTAS CREDENCIALES
+================================================================================
+
+Para hacer login, usa el endpoint POST /auth/login con el siguiente body:
+
+{
+  "cedula": "CEDULA_DEL_USUARIO",
+  "password": "password123"
+}
+
+Ejemplo para el administrador:
+{
+  "cedula": "1234567890",
+  "password": "password123"
+}
+
+
+================================================================================
+                            CÓMO EJECUTAR EL SEED
+================================================================================
+
+IMPORTANTE: Antes de ejecutar el seed, asegúrate de:
+1. Tener configurado el archivo .env con la DATABASE_URL
+2. Haber ejecutado las migraciones de Prisma
+
+Pasos completos:
+
+1. Configurar la base de datos (si no lo has hecho):
+   Edita .env y configura DATABASE_URL
+
+2. Ejecutar las migraciones (IMPORTANTE - ejecutar primero):
+   npx prisma migrate dev
+   
+   O si prefieres aplicar sin crear nuevas migraciones:
+   npx prisma db push
+
+3. Ejecutar el seed:
+
+   Opción 1: Usando npm
+     npm run seed
+
+   Opción 2: Usando Prisma directamente
+     npx prisma db seed
+
+   Opción 3: Ejecutar directamente con ts-node
+     npx ts-node prisma/seed.ts
+
+
+NOTA: El seed eliminará todos los datos existentes y creará datos frescos.
+
+
+================================================================================
+                                FIN DEL DOCUMENTO
+================================================================================
