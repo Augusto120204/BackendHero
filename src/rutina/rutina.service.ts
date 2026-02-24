@@ -2,10 +2,14 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateRutinaDto } from './dto/create-rutina.dto';
 import { UpdateRutinaDto } from './dto/update-rutina.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class RutinaService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService,
+  ) {}
 
   async create(dto: CreateRutinaDto) {
     // Verificar que el cliente existe
@@ -61,6 +65,17 @@ export class RutinaService {
         finalizado: false,
       },
     });
+
+    // Crear notificación para el cliente
+    try {
+      await this.notificationsService.notificarRutinaAsignada(
+        dto.clienteId,
+        response.id,
+      );
+    } catch (error) {
+      console.error('Error al crear notificación:', error);
+      // No lanzar error para no afectar la creación de la rutina
+    }
 
     return response;
   }

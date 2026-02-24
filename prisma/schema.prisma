@@ -28,6 +28,7 @@ model Usuario {
   recepcionista   Recepcionista[]
   cliente         Cliente[]
   gastos          Gasto[]
+  notificaciones  Notificacion[]
 }
 
 model Administrador {
@@ -266,3 +267,14 @@ model Gasto {
   usuario     Usuario  @relation(fields: [usuarioId], references: [id])
 }
 
+model Notificacion {
+  id          Int      @id @default(autoincrement())
+  usuarioId   Int
+  tipo        String   // 'rutina_asignada', 'perfil_completado', 'perfil_actualizado', 'solicitud_rutina'
+  mensaje     String
+  leida       Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  metadata    String?  // JSON con datos adicionales (clienteId, rutinaId, etc.)
+
+  usuario     Usuario  @relation(fields: [usuarioId], references: [id])
+}

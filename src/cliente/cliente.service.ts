@@ -3,13 +3,17 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateClienteDto } from './dto/create-cliente.dto';
 import { UpdateClienteDto } from './dto/update-cliente.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class ClienteService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService,
+  ) {}
 
-  create(dto: CreateClienteDto) {
-    return this.prisma.cliente.create({
+  async create(dto: CreateClienteDto) {
+    const cliente = await this.prisma.cliente.create({
       data: {
         id: dto.usuarioId, // El ID del cliente será el mismo que el del usuario
         usuarioId: dto.usuarioId,
@@ -20,6 +24,18 @@ export class ClienteService {
         tiempoEntrenar: dto.tiempoEntrenar,
       },
     });
+
+    // Notificar a los entrenadores que el cliente completó su perfil
+    try {
+      await this.notificationsService.notificarPerfilCliente(
+        cliente.id,
+        'completado',
+      );
+    } catch (error) {
+      console.error('Error al crear notificación:', error);
+    }
+
+    return cliente;
   }
 
   async findAll(page = 1, limit = 10, search?: string) {
@@ -200,7 +216,19 @@ export class ClienteService {
     console.log('Actualizar cliente', id, dto);
     await this.findOne(id);
     console.log('Cliente encontrado, procediendo a actualizar');
-    return this.prisma.cliente.update({ where: { id }, data: dto });
+    const cliente = await this.prisma.cliente.update({ where: { id }, data: dto });
+
+    // Notificar a los entrenadores que el cliente actualizó su perfil
+    try {
+      await this.notificationsService.notificarPerfilCliente(
+        id,
+        'actualizado',
+      );
+    } catch (error) {
+      console.error('Error al crear notificación:', error);
+    }
+
+    return cliente;
   }
 
   // TODO: agregar delete cascade en prisma
